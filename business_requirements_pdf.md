@@ -1,5 +1,7 @@
 https://chatgpt.com/c/676fb251-b950-8005-8776-c69cf9deed4d
- 
+
+file name: translator_pdf.py
+
 ChatGPT 4o
 Du:
 Erstelle mir ein Python ein Programm das ein großes PDF-Dokument seitenweise einliest und den Inhalt der Seite an eine api schickt

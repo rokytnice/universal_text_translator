@@ -43,7 +43,7 @@ def find_files(pattern):
     return [file for file in os.listdir('.') if file.endswith(pattern)]
 
 def read_pdf_pages(pdf_file, start_page=1, end_page=None):
-    """Reads pages from a PDF file and returns the text of each page."""
+    """Reads pages from a PDF file and returns the text of each page using a stream."""
     logging.info("Opening PDF file: %s", pdf_file)
     with open(pdf_file, 'rb') as f:
         reader = PyPDF2.PdfReader(f)
@@ -57,14 +57,24 @@ def read_pdf_pages(pdf_file, start_page=1, end_page=None):
             yield index + 1, reader.pages[index].extract_text()
 
 def create_target_document(source_file, language, translated_pages):
-    """Creates a new text document with the translated pages."""
+    """Creates a new text document with the translated pages using a write stream."""
     target_file = source_file.replace('.pdf', f'_{language}.txt')
     logging.info("Creating target document: %s", target_file)
     with open(target_file, 'w', encoding='utf-8') as f:
         for page_number, original_text, translated_text in translated_pages:
             f.write(f"--- Page {page_number} ---\n")
-            f.write(textwrap.fill(translated_text, width=80) + "\n\n")
+            for line in textwrap.wrap(translated_text, width=80):
+                f.write(line + "\n")
+            f.write("\n")
     return target_file
+
+def throttle_request(last_request_time, min_interval=6):
+    """Ensures a minimum interval between requests."""
+    elapsed_time = time.time() - last_request_time
+    if elapsed_time < min_interval:
+        sleep_time = min_interval - elapsed_time
+        logging.info("Throttling request for %.2f seconds.", sleep_time)
+        time.sleep(sleep_time)
 
 if __name__ == "__main__":
     language = input("Enter the target language (e.g., 'de' for German, default: 'de'): ") or "de"
@@ -87,11 +97,15 @@ if __name__ == "__main__":
         if not model:
             exit(1)
 
+        last_request_time = 0
         for pdf_file in pdf_files:
             logging.info("Processing file: %s", pdf_file)
 
             translated_pages = []
             for page_number, page_text in read_pdf_pages(pdf_file, start_page, end_page):
+                throttle_request(last_request_time)
+                last_request_time = time.time()
+
                 translated_text, original_chars, translated_chars = get_translation_with_genai(model, page_text)
                 logging.info(
                     "Page %d: Original characters: %d, Translated characters: %d",

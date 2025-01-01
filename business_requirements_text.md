@@ -1,3 +1,5 @@
+file: translator.py
+
 https://chatgpt.com/c/677257fc-9b94-8005-8b65-22ba07c56b9f
  
 
@@ -65,3 +67,5 @@ Verwende für das text was generiert wird ein Template dass die typische Breite 
 
 
 setze die seitenzahl im zieldokument passend zu der übersetzen seite
+
+Arbeite mit streams beim einlesen und schreiben von Dateien und beim Lesen aus APIs
