@@ -1,5 +1,5 @@
 import os
-import PyPDF2
+import pdfplumber
 import textwrap
 import time
 import logging
@@ -43,30 +43,34 @@ def find_files(pattern):
     return [file for file in os.listdir('.') if file.endswith(pattern)]
 
 def read_pdf_pages(pdf_file, start_page=1, end_page=None):
-    """Reads pages from a PDF file and returns the text of each page using a stream."""
+    """Reads pages from a PDF file and returns the text of each page using pdfplumber."""
     logging.info("Opening PDF file: %s", pdf_file)
-    with open(pdf_file, 'rb') as f:
-        reader = PyPDF2.PdfReader(f)
-        total_pages = len(reader.pages)
+    with pdfplumber.open(pdf_file) as pdf:
+        total_pages = len(pdf.pages)
         end_page = end_page or total_pages
         if start_page > end_page:
             logging.warning("Invalid range: Start page %d is greater than end page %d", start_page, end_page)
             return
         for index in range(start_page - 1, min(end_page, total_pages)):
             logging.info("Reading page %d", index + 1)
-            yield index + 1, reader.pages[index].extract_text()
+            text = pdf.pages[index].extract_text() or ""
+            if not text:
+                logging.warning("Page %d contains no extractable text. Skipping...", index + 1)
+                continue
+            yield index + 1, text
 
-def create_target_document(source_file, language, translated_pages):
-    """Creates a new text document with the translated pages using a write stream."""
+def create_target_document_stream(source_file, language):
+    """Creates a target text document using a write stream and writes pages incrementally."""
     target_file = source_file.replace('.pdf', f'_{language}.txt')
     logging.info("Creating target document: %s", target_file)
-    with open(target_file, 'w', encoding='utf-8') as f:
-        for page_number, original_text, translated_text in translated_pages:
-            f.write(f"--- Page {page_number} ---\n")
-            for line in textwrap.wrap(translated_text, width=80):
-                f.write(line + "\n")
-            f.write("\n")
-    return target_file
+    return open(target_file, 'a', encoding='utf-8')
+
+def write_page_to_document(file_stream, page_number, translated_text):
+    """Writes a single page's translated text to the target document."""
+    file_stream.write(f"--- Page {page_number} ---\n")
+    for line in textwrap.wrap(translated_text, width=80):
+        file_stream.write(line + "\n")
+    file_stream.write("\n")
 
 def throttle_request(last_request_time, min_interval=6):
     """Ensures a minimum interval between requests."""
@@ -101,17 +105,16 @@ if __name__ == "__main__":
         for pdf_file in pdf_files:
             logging.info("Processing file: %s", pdf_file)
 
-            translated_pages = []
-            for page_number, page_text in read_pdf_pages(pdf_file, start_page, end_page):
-                throttle_request(last_request_time)
-                last_request_time = time.time()
+            with create_target_document_stream(pdf_file, language) as target_stream:
+                for page_number, page_text in read_pdf_pages(pdf_file, start_page, end_page):
+                    throttle_request(last_request_time)
+                    last_request_time = time.time()
 
-                translated_text, original_chars, translated_chars = get_translation_with_genai(model, page_text)
-                logging.info(
-                    "Page %d: Original characters: %d, Translated characters: %d",
-                    page_number, original_chars, translated_chars
-                )
-                translated_pages.append((page_number, page_text, translated_text))
+                    translated_text, original_chars, translated_chars = get_translation_with_genai(model, page_text)
+                    logging.info(
+                        "Page %d: Original characters: %d, Translated characters: %d",
+                        page_number, original_chars, translated_chars
+                    )
+                    write_page_to_document(target_stream, page_number, translated_text)
 
-            target_file = create_target_document(pdf_file, language, translated_pages)
-            logging.info("Translation completed. Result saved in: %s", target_file)
+            logging.info("Translation completed. Incremental results saved in: %s", pdf_file.replace('.pdf', f'_{language}.txt'))
