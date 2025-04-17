@@ -1,0 +1,7 @@
+# requirements.txt
+
+# For reading text content from PDF files
+pdfplumber
+
+# For interacting with the Google Generative AI API (Gemini)
+google-generativeai
