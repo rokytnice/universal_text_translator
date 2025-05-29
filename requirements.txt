@@ -5,3 +5,6 @@ pdfplumber
 
 # For interacting with the Google Generative AI API (Gemini)
 google-generativeai
+
+ebooklib
+beautifulsoup4
