@@ -69,3 +69,7 @@ Verwende für das text was generiert wird ein Template dass die typische Breite 
 setze die seitenzahl im zieldokument passend zu der übersetzen seite
 
 Arbeite mit streams beim einlesen und schreiben von Dateien und beim Lesen aus APIs
+
+Pass den code so an, dass dieses Modell verwendet wird. gemini-2.5-flash-lite-preview-06-17
+env var GOOGLE_LLM enthält den modellnamen und kann den default überschreiben
+ Beim Start soll der aktive Modellnahme  Ausgegeben werden.

@@ -23,7 +23,14 @@ def configure_genai():
         logging.error("API key not found in environment variables.")
         return None
     configure(api_key=API_KEY)
-    return GenerativeModel("gemini-1.5-flash")
+
+    # Use the model from the GOOGLE_LLM env var, or the specified default
+    default_model = "gemini-1.5-flash-lite-preview-06-17"
+    model_name = os.getenv("GOOGLE_LLM", default_model)
+
+    logging.info(f"Using Generative AI model: {model_name}")
+
+    return GenerativeModel(model_name)
 
 
 def get_translation_with_genai(model, content):
@@ -43,17 +50,18 @@ def get_translation_with_genai(model, content):
         return "Error in translation.", len(content), 0
 
 
-def find_files(extensions):
-    """Finds files in the current directory that match any of the given extensions."""
-    if isinstance(extensions, str):  # Allow single string for backward compatibility or simple use
+def find_files(extensions, root_dir='.'):
+    """Finds files recursively in the given directory that match any of the given extensions."""
+    if isinstance(extensions, str):
         extensions = [extensions]
-    logging.info("Searching for files matching extensions: %s", extensions)
+    logging.info(f"Recursively searching for files in '{root_dir}' matching extensions: {extensions}")
     found_files = []
-    for file_name in os.listdir('.'):
-        if any(file_name.lower().endswith(ext.lower()) for ext in extensions):
-            found_files.append(file_name)
+    for root, _, files in os.walk(root_dir):
+        for file_name in files:
+            if any(file_name.lower().endswith(ext.lower()) for ext in extensions):
+                full_path = os.path.join(root, file_name)
+                found_files.append(full_path)
     return found_files
-
 
 def read_pdf_pages(pdf_file, start_page=1, end_page=None):
     """Reads pages from a PDF file and returns the text of each page using pdfplumber."""
