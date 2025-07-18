@@ -12,7 +12,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 # Set up API key and language (default)
 API_KEY = os.getenv("API_KEY")
-LANGUAGE = "de"  # Default language, can be overridden by user input
+LANGUAGE = "deutsch"  # Default language, can be overridden by user input
 
 
 def configure_genai():
@@ -38,7 +38,7 @@ def get_translation_with_genai(model, content):
     Uses the Generative AI model to perform translations.
     Returns the translation and the character counts for input and output.
     """
-    logging.info("Generating translation with Google Gemini API.")
+    logging.info("Generating %s translation with Google Gemini API.",LANGUAGE)
     try:
         # Use the global LANGUAGE variable, which is updated by user input
         response = model.generate_content(f"Translate the following text to {LANGUAGE}: {content}")
@@ -208,7 +208,7 @@ def throttle_request(last_request_time, min_interval=6):  # 6 seconds for ~10 RP
 
 if __name__ == "__main__":
     # User input for language
-    user_lang_input = input(f"Enter the target language (e.g., 'de' for German, default: '{LANGUAGE}'): ")
+    user_lang_input = input(f"Enter the target language (e.g., 'deutsch' for German, default: '{LANGUAGE}'): ")
     if user_lang_input.strip():
         LANGUAGE = user_lang_input.strip().lower()
     logging.info(f"Target language set to: {LANGUAGE}")
