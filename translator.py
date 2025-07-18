@@ -24,9 +24,9 @@ def configure_genai():
         return None
     configure(api_key=API_KEY)
 
-    # Use the model from the GOOGLE_LLM env var, or the specified default
+    # Use the model from the GEMINI_LLM env var, or the specified default
     default_model = "gemini-1.5-flash-lite-preview-06-17"
-    model_name = os.getenv("GOOGLE_LLM", default_model)
+    model_name = os.getenv("GEMINI_LLM", default_model)
 
     logging.info(f"Using Generative AI model: {model_name}")
 
